@@ -27,7 +27,6 @@ import { db } from '../config';
 import {
   collection,
   doc,
-  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -91,6 +90,7 @@ function getSpendings(expenses) {
 }
 
 function reducer(state, { type, payload }) {
+  // eslint-disable-next-line default-case
   switch (type) {
     case ACTIONS.SET_DATA:
       const { expenses } = payload;
@@ -153,23 +153,6 @@ export function APIContextProvider({ children }) {
   //   setLoading(false);
   // }
 
-  async function getExpenses() {
-    if (!currentUser) return;
-    const expensesColRef = collection(db, 'expenses');
-    const expensesOrderedQuery = query(
-      expensesColRef,
-      where('uid', '==', currentUser.uid),
-      orderBy('date', 'desc')
-    );
-    onSnapshot(expensesOrderedQuery, (snapshot) => {
-      const expenses = snapshot.docs.map((doc) => {
-        return { id: doc.id, ...doc.data() };
-      });
-      dispatch({ type: ACTIONS.SET_DATA, payload: { expenses: expenses } });
-      setLoading(false);
-    });
-  }
-
   async function addExpense(title, business, type, amount, date) {
     const expense = new Expense(title, business, type, amount, date);
     try {
@@ -181,6 +164,22 @@ export function APIContextProvider({ children }) {
 
   useEffect(() => {
     setLoading(true);
+    async function getExpenses() {
+      if (!currentUser) return;
+      const expensesColRef = collection(db, 'expenses');
+      const expensesOrderedQuery = query(
+        expensesColRef,
+        where('uid', '==', currentUser.uid),
+        orderBy('date', 'desc')
+      );
+      onSnapshot(expensesOrderedQuery, (snapshot) => {
+        const expenses = snapshot.docs.map((doc) => {
+          return { id: doc.id, ...doc.data() };
+        });
+        dispatch({ type: ACTIONS.SET_DATA, payload: { expenses: expenses } });
+        setLoading(false);
+      });
+    }
     getExpenses();
   }, [currentUser]);
 
